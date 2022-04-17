@@ -5,10 +5,10 @@
 
 package org.jetbrains.kotlin.backend.konan
 
-import org.jetbrains.kotlin.backend.konan.descriptors.findPackage
 import org.jetbrains.kotlin.backend.konan.ir.konanLibrary
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.util.getPackageFragment
 import org.jetbrains.kotlin.library.KotlinLibrary
 
 internal abstract class LlvmModuleSpecificationBase(protected val cachedLibraries: CachedLibraries) : LlvmModuleSpecification {
@@ -47,5 +47,5 @@ internal class CacheLlvmModuleSpecification(
     override fun containsLibrary(library: KotlinLibrary): Boolean = library == libraryToCache.klib
 
     override fun containsDeclaration(declaration: IrDeclaration): Boolean =
-            declaration.konanLibrary.let { it == null || containsLibrary(it) && declaration.findPackage() !is IrExternalPackageFragment }
+            declaration.konanLibrary.let { it == null || containsLibrary(it) && declaration.getPackageFragment() !is IrExternalPackageFragment }
 }

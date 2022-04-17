@@ -7,7 +7,6 @@ import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
 import org.jetbrains.kotlin.backend.common.phaser.*
 import org.jetbrains.kotlin.backend.common.serialization.CompatibilityMode
 import org.jetbrains.kotlin.backend.common.serialization.metadata.KlibMetadataMonolithicSerializer
-import org.jetbrains.kotlin.backend.konan.descriptors.findPackage
 import org.jetbrains.kotlin.backend.konan.descriptors.isFromInteropLibrary
 import org.jetbrains.kotlin.backend.konan.llvm.*
 import org.jetbrains.kotlin.backend.konan.lower.ExpectToActualDefaultValueCopier
@@ -134,7 +133,7 @@ internal val buildAdditionalCacheInfoPhase = konanUnitPhase(
                         expression.acceptChildrenVoid(this)
 
                         val callee = expression.symbol.owner
-                        if (callee.findPackage() is IrExternalPackageFragment) return
+                        if (callee.getPackageFragment() is IrExternalPackageFragment) return
 
                         calledFromExportedInlineFunctions.add(callee)
                     }
@@ -143,7 +142,7 @@ internal val buildAdditionalCacheInfoPhase = konanUnitPhase(
                         expression.acceptChildrenVoid(this)
 
                         val callee = expression.symbol.owner
-                        if (callee.findPackage() is IrExternalPackageFragment) return
+                        if (callee.getPackageFragment() is IrExternalPackageFragment) return
 
                         calledFromExportedInlineFunctions.add(callee)
                     }

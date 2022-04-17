@@ -10,7 +10,6 @@ import llvm.*
 import org.jetbrains.kotlin.backend.konan.*
 import org.jetbrains.kotlin.backend.konan.Context
 import org.jetbrains.kotlin.library.resolver.TopologicalLibraryOrder
-import org.jetbrains.kotlin.backend.konan.descriptors.findPackage
 import org.jetbrains.kotlin.backend.konan.ir.llvmSymbolOrigin
 import org.jetbrains.kotlin.backend.konan.llvm.KonanBinaryInterface.functionName
 import org.jetbrains.kotlin.descriptors.konan.CompiledKlibModuleOrigin
@@ -191,7 +190,7 @@ internal interface ContextUtils : RuntimeAware {
                     val symbolName = if (KonanBinaryInterface.isExported(this)) {
                         this.computeSymbolName()
                     } else {
-                        val externalPackageFragment = this.findPackage() as? IrExternalPackageFragment
+                        val externalPackageFragment = this.getPackageFragment() as? IrExternalPackageFragment
                                 ?: error("Expected an external package fragment for $descriptor")
                         val moduleDescriptor = externalPackageFragment.packageFragmentDescriptor.containingDeclaration
                         val moduleDeserializer = context.irLinker.moduleDeserializers[moduleDescriptor]
