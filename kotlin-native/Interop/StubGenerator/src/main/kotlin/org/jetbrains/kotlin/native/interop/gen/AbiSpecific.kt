@@ -19,9 +19,6 @@ internal fun Type.isStret(target: KonanTarget): Boolean {
     val unwrappedType = this.unwrapTypedefs()
     val abiInfo: ObjCAbiInfo = when (target.architecture) {
         Architecture.ARM64 -> {
-            // Currently, cinterop works with watchos_arm64 as with watchos_arm32.
-            // TODO: ABI for watchos_arm64 should be revisited after LLVM update.
-            require(target != KonanTarget.WATCHOS_ARM64)
             DarwinArm64AbiInfo()
         }
 
