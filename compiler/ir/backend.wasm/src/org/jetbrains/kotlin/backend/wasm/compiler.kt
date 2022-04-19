@@ -120,7 +120,7 @@ enum class WasmLoaderKind {
     BROWSER,
 }
 
-fun generateJsWasmLoader(kind: WasmLoaderKind, wasmFilePath: String, externalJs: String): String {
+fun generateJsWasmLoader(kind: WasmLoaderKind, wasmFilePath: String, externalJs: String, includeExportDirective: Boolean): String {
     val instantiation = when (kind) {
         WasmLoaderKind.D8 ->
             """
@@ -160,7 +160,7 @@ fun generateJsWasmLoader(kind: WasmLoaderKind, wasmFilePath: String, externalJs:
             "module.exports = wasmExports;\n"
     }
 
-    return externalJs + instantiation + init + export
+    return externalJs + instantiation + init + if (includeExportDirective) export else ""
 }
 
 fun writeCompilationResult(
@@ -172,6 +172,16 @@ fun writeCompilationResult(
     dir.mkdirs()
     File(dir, "$fileNameBase.wat").writeText(result.wat)
     File(dir, "$fileNameBase.wasm").writeBytes(result.wasm)
-    val jsWithLoader = generateJsWasmLoader(loaderKind, "./$fileNameBase.wasm", result.js)
+
+    val jsWithLoader = when (loaderKind) {
+        WasmLoaderKind.NODE -> {
+            val nodeEscape = "if (typeof process != \"undefined\") process.exit(0)"
+            val d8Js = generateJsWasmLoader(WasmLoaderKind.D8, "./$fileNameBase.wasm", result.js, includeExportDirective = false)
+            "$nodeEscape\n$d8Js"
+        }
+        else -> {
+            generateJsWasmLoader(loaderKind, "./$fileNameBase.wasm", result.js, includeExportDirective = true)
+        }
+    }
     File(dir, "$fileNameBase.js").writeText(jsWithLoader)
 }

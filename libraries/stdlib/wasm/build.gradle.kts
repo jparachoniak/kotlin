@@ -142,9 +142,33 @@ val compileTestKotlinWasm by tasks.existing(KotlinCompile::class) {
     }
 }
 
-tasks.named<KotlinJsIrLink>("compileTestDevelopmentExecutableKotlinWasm") {
+val compileTestDevelopmentExecutableKotlinWasm = tasks.named<KotlinJsIrLink>("compileTestDevelopmentExecutableKotlinWasm") {
     (this as KotlinCompile<*>).kotlinOptions.freeCompilerArgs += "-Xwasm-enable-array-range-checks"
 }
+
+val runWasmStdLibTestsWithD8 by tasks.registering(Exec::class) {
+    dependsOn(":js:js.tests:unzipV8")
+    dependsOn(compileTestDevelopmentExecutableKotlinWasm)
+
+    val unzipV8Task = project.tasks.getByPath(":js:js.tests:unzipV8")
+    val d8Path = File(unzipV8Task.outputs.files.single(), "d8")
+    executable = d8Path.toString()
+
+    val compiledFile = compileTestDevelopmentExecutableKotlinWasm
+        .get()
+        .kotlinOptions
+        .outputFile
+        ?.let { File(it) }
+    check(compiledFile != null)
+
+    workingDir = compiledFile.parentFile
+    args = listOf("--experimental-wasm-gc", "--experimental-wasm-eh", compiledFile.name)
+}
+
+tasks.getByName<Task>("check") {
+    dependsOn(runWasmStdLibTestsWithD8)
+}
+
 
 val runtimeElements by configurations.creating {}
 val apiElements by configurations.creating {}

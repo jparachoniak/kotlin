@@ -7,37 +7,59 @@ package kotlin.test
 
 import kotlin.test.FrameworkAdapter
 
-// Need to wrap into additional lambdas so that js launcher will work without Mocha or any other testing framework
-@JsFun("(name, fn) => describe(name, fn)")
-internal external fun describe(name: String, fn: () -> Unit)
-
-@JsFun("(name, fn) => xdescribe(name, fn)")
-internal external fun xdescribe(name: String, fn: () -> Unit)
-
-@JsFun("(name, fn) => it(name, fn)")
-internal external fun it(name: String, fn: () -> Any?)
-
-@JsFun("(name, fn) => xit(name, fn)")
-internal external fun xit(name: String, fn: () -> Any?)
-
-/**
- * [Jasmine](https://github.com/jasmine/jasmine) adapter.
- * Also used for [Mocha](https://mochajs.org/) and [Jest](https://facebook.github.io/jest/).
- */
 internal class JasmineLikeAdapter : FrameworkAdapter {
+    private enum class MessageType(val type: String) {
+        Started("testStarted"),
+        Finished("testFinished"),
+        Failed("testFailed"),
+        Ignored("testIgnored"),
+        SuiteStarted("testSuiteStarted"),
+        SuiteFinished("testSuiteFinished"),
+    }
+
+    private fun String?.tcEscape(): String =
+        this?.replace("|", "||")
+            ?.replace("\'", "|'")
+            ?.replace("\n", "|n")
+            ?.replace("\r", "|r")
+            ?.replace("\u0085", "|x") // next line
+            ?.replace("\u2028", "|l") // line separator
+            ?.replace("\u2029", "|p") // paragraph separator
+            ?.replace("[", "|[")
+            ?.replace("]", "|]")
+            ?: ""
+
+    private fun MessageType.report(name: String) {
+        println("##teamcity[$type name='${name.tcEscape()}'")
+    }
+
+    private fun MessageType.report(name: String, e: Throwable) {
+        println("##teamcity[$type name='${name.tcEscape()}' text='${e.message.tcEscape()}' errorDetails='${e.stackTraceToString().tcEscape()}' status='ERROR']")
+    }
+
     override fun suite(name: String, ignored: Boolean, suiteFn: () -> Unit) {
-        if (ignored) {
-            xdescribe(name, suiteFn)
-        } else {
-            describe(name, suiteFn)
+        MessageType.SuiteStarted.report(name)
+        if (!ignored) {
+            try {
+                suiteFn()
+                MessageType.SuiteFinished.report(name)
+            } catch (e: Throwable) {
+                MessageType.SuiteFinished.report(name, e)
+            }
         }
     }
 
     override fun test(name: String, ignored: Boolean, testFn: () -> Any?) {
         if (ignored) {
-            xit(name, testFn)
+            MessageType.Ignored.report(name)
         } else {
-            it(name, testFn)
+            try {
+                MessageType.Started.report(name)
+                testFn()
+                MessageType.Finished.report(name)
+            } catch (e: Throwable) {
+                MessageType.Failed.report(name, e)
+            }
         }
     }
 }
