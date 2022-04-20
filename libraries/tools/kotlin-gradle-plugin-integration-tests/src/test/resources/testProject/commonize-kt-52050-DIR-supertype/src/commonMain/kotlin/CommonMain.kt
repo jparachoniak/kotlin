@@ -11,7 +11,7 @@ fun main() {
     Linux and Windows Hosts failed to retain
     CPointed supertype of `DIR` when commonizing.
     This happened in the special case of 'single platform propagation', which
-    lost forward declarations from one step to th next.
+    lost forward declarations from one step to the next.
      */
     requireCPointed(DIR())
 }
