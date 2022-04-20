@@ -162,11 +162,7 @@ internal fun <T : Any, R> commonize(
     commonizer: Commonizer<T, R>
 ): R? {
     if (targetDeclarations.any { it == null }) return null
-    return commonizer.commonize(targetDeclarations as List<T>)?.also { common ->
-        if (common is CirClassifier && common.name.toStrippedString() == "DIR") {
-            println("BREAK")
-        }
-    }
+    return commonizer.commonize(targetDeclarations as List<T>)
 }
 
 @Suppress("NOTHING_TO_INLINE")
