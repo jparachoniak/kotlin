@@ -69,9 +69,20 @@ internal class CirProvidedClassifiersByModules internal constructor(
         }
 
         fun loadExportedForwardDeclarations(modulesProvider: ModulesProvider): CirProvidedClassifiers {
+            return loadExportedForwardDeclarations(listOf(modulesProvider))
+        }
+
+        /**
+         * Will load *all* forward declarations provided by all modules into a flat [CirProvidedClassifiers].
+         * Note: This builds a union *not an intersection* of forward declarations.
+         * Building the union might not be _correct_ in the context of commonization, but is expected to be
+         * less harmful than missing dependencies from a intersection.
+         */
+        fun loadExportedForwardDeclarations(modulesProviders: List<ModulesProvider>): CirProvidedClassifiers {
             val classifiers = THashMap<CirEntityId, CirProvided.Classifier>()
 
-            modulesProvider.moduleInfos.mapNotNull { moduleInfo -> moduleInfo.cInteropAttributes }
+            modulesProviders.flatMap { moduleProvider -> moduleProvider.moduleInfos }
+                .mapNotNull { moduleInfo -> moduleInfo.cInteropAttributes }
                 .forEach { attrs -> readExportedForwardDeclarations(attrs, classifiers::set) }
 
             if (classifiers.isEmpty) return CirProvidedClassifiers.EMPTY

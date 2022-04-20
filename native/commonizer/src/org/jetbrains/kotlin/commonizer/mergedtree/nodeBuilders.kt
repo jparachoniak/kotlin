@@ -5,26 +5,23 @@
 
 package org.jetbrains.kotlin.commonizer.mergedtree
 
-import org.jetbrains.kotlin.commonizer.cir.CirClassRecursionMarker
-import org.jetbrains.kotlin.commonizer.cir.CirDeclaration
-import org.jetbrains.kotlin.commonizer.cir.CirEntityId
-import org.jetbrains.kotlin.commonizer.cir.CirTypeAliasRecursionMarker
 import org.jetbrains.kotlin.commonizer.core.*
 import org.jetbrains.kotlin.commonizer.CommonizerSettings
+import org.jetbrains.kotlin.commonizer.cir.*
 import org.jetbrains.kotlin.commonizer.utils.CommonizedGroup
 import org.jetbrains.kotlin.storage.NullableLazyValue
 import org.jetbrains.kotlin.storage.StorageManager
 
 internal fun buildRootNode(
     storageManager: StorageManager,
-    dependencies: CirProvidedClassifiers,
+    commonDependencies: CirProvidedClassifiers,
     size: Int
 ): CirRootNode = buildNode(
     storageManager = storageManager,
     size = size,
     nodeRelationship = null,
     commonizerProducer = ::RootCommonizer,
-    nodeProducer = { targetDeclarations, commonDeclaration -> CirRootNode(dependencies, targetDeclarations, commonDeclaration) }
+    nodeProducer = { targetDeclarations, commonDeclaration -> CirRootNode(commonDependencies, targetDeclarations, commonDeclaration) }
 )
 
 internal fun buildModuleNode(
@@ -165,7 +162,11 @@ internal fun <T : Any, R> commonize(
     commonizer: Commonizer<T, R>
 ): R? {
     if (targetDeclarations.any { it == null }) return null
-    return commonizer.commonize(targetDeclarations as List<T>)
+    return commonizer.commonize(targetDeclarations as List<T>)?.also { common ->
+        if (common is CirClassifier && common.name.toStrippedString() == "DIR") {
+            println("BREAK")
+        }
+    }
 }
 
 @Suppress("NOTHING_TO_INLINE")

@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Visibilities
 
 /** A set of classes and type aliases provided by libraries (either the libraries to commonize, or their dependency libraries)/ */
-interface CirProvidedClassifiers {
+sealed interface CirProvidedClassifiers {
     fun hasClassifier(classifierId: CirEntityId): Boolean
     fun classifier(classifierId: CirEntityId): CirProvided.Classifier?
 
@@ -22,24 +22,6 @@ interface CirProvidedClassifiers {
         override fun hasClassifier(classifierId: CirEntityId) = false
         override fun classifier(classifierId: CirEntityId): CirProvided.Classifier? = null
         override fun findTypeAliasesWithUnderlyingType(underlyingClassifier: CirEntityId) = emptyList<CirEntityId>()
-    }
-
-    private class CompositeClassifiers(val delegates: List<CirProvidedClassifiers>) : CirProvidedClassifiers {
-        override fun hasClassifier(classifierId: CirEntityId) = delegates.any { it.hasClassifier(classifierId) }
-        override fun classifier(classifierId: CirEntityId): CirProvided.Classifier? {
-            var fallbackReturn: CirProvided.Classifier? = null
-            for (delegate in delegates) {
-                delegate.classifier(classifierId)?.let { classifier ->
-                    if (classifier !== FALLBACK_FORWARD_DECLARATION_CLASS) return classifier
-                    else fallbackReturn = classifier
-                }
-            }
-            return fallbackReturn
-        }
-
-        override fun findTypeAliasesWithUnderlyingType(underlyingClassifier: CirEntityId): List<CirEntityId> {
-            return delegates.flatMap { it.findTypeAliasesWithUnderlyingType(underlyingClassifier) }
-        }
     }
 
     companion object {
@@ -68,3 +50,37 @@ interface CirProvidedClassifiers {
     }
 }
 
+internal operator fun CirProvidedClassifiers.plus(other: CirProvidedClassifiers): CirProvidedClassifiers {
+    if (this is CompositeClassifiers && other is CompositeClassifiers) {
+        return CompositeClassifiers(this.delegates + other.delegates)
+    }
+
+    if (this is CompositeClassifiers) {
+        return CompositeClassifiers(this.delegates + other)
+    }
+
+    if (other is CompositeClassifiers) {
+        return CompositeClassifiers(listOf(this) + other.delegates)
+    }
+
+    return CompositeClassifiers(listOf(this, other))
+}
+
+private class CompositeClassifiers(val delegates: List<CirProvidedClassifiers>) : CirProvidedClassifiers {
+    override fun hasClassifier(classifierId: CirEntityId) = delegates.any { it.hasClassifier(classifierId) }
+
+    override fun classifier(classifierId: CirEntityId): CirProvided.Classifier? {
+        var fallbackReturn: CirProvided.Classifier? = null
+        for (delegate in delegates) {
+            delegate.classifier(classifierId)?.let { classifier ->
+                if (classifier !== CirProvidedClassifiers.FALLBACK_FORWARD_DECLARATION_CLASS) return classifier
+                else fallbackReturn = classifier
+            }
+        }
+        return fallbackReturn
+    }
+
+    override fun findTypeAliasesWithUnderlyingType(underlyingClassifier: CirEntityId): List<CirEntityId> {
+        return delegates.flatMap { it.findTypeAliasesWithUnderlyingType(underlyingClassifier) }
+    }
+}
