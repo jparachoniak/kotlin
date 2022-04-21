@@ -163,6 +163,16 @@ val runWasmStdLibTestsWithD8 by tasks.registering(Exec::class) {
 
     workingDir = compiledFile.parentFile
     args = listOf("--experimental-wasm-gc", "--experimental-wasm-eh", compiledFile.name)
+
+    doFirst {
+        println("AAA1 -> $d8Path")
+        println("AAA2 -> ${d8Path.exists()}")
+        println("BBB1 -> $compiledFile")
+        println("BBB2 -> ${compiledFile.exists()}")
+        println("BBB3 -> ${compiledFile.parentFile}")
+        println("BBB4 -> ${compiledFile.parentFile?.exists()}")
+        println("BBB5 ->\n ${compiledFile.readText()}")
+    }
 }
 
 tasks.getByName<Task>("check") {

@@ -30,7 +30,7 @@ internal class JasmineLikeAdapter : FrameworkAdapter {
             ?: ""
 
     private fun MessageType.report(name: String) {
-        println("##teamcity[$type name='${name.tcEscape()}'")
+        println("##teamcity[$type name='${name.tcEscape()}']")
     }
 
     private fun MessageType.report(name: String, e: Throwable) {
