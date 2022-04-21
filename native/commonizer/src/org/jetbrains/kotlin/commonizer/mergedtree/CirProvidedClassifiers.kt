@@ -51,19 +51,12 @@ sealed interface CirProvidedClassifiers {
 }
 
 internal operator fun CirProvidedClassifiers.plus(other: CirProvidedClassifiers): CirProvidedClassifiers {
-    if (this is CompositeClassifiers && other is CompositeClassifiers) {
-        return CompositeClassifiers(this.delegates + other.delegates)
+    return when {
+        this is CompositeClassifiers && other is CompositeClassifiers -> CompositeClassifiers(this.delegates + other.delegates)
+        this is CompositeClassifiers -> CompositeClassifiers(this.delegates + other)
+        other is CompositeClassifiers -> CompositeClassifiers(listOf(this) + other.delegates)
+        else -> CompositeClassifiers(listOf(this, other))
     }
-
-    if (this is CompositeClassifiers) {
-        return CompositeClassifiers(this.delegates + other)
-    }
-
-    if (other is CompositeClassifiers) {
-        return CompositeClassifiers(listOf(this) + other.delegates)
-    }
-
-    return CompositeClassifiers(listOf(this, other))
 }
 
 private class CompositeClassifiers(val delegates: List<CirProvidedClassifiers>) : CirProvidedClassifiers {
