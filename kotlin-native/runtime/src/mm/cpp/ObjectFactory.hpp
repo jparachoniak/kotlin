@@ -16,6 +16,7 @@
 #include "FinalizerHooks.hpp"
 #include "Memory.h"
 #include "Mutex.hpp"
+#include "Porting.h"
 #include "Types.h"
 #include "Utils.hpp"
 
